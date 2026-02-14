@@ -1,0 +1,1077 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://generativelanguage.googleapis.com https://api.anthropic.com https://api.openai.com; img-src 'self' data:;">
+<title>CleanSweep</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafbfc;--bg2:#f0f2f5;--bg3:#e8eaef;--text:#1a1d2e;--text2:#6b7280;--text3:#9ca3af;--accent:#10b981;--accent-lt:#d1fae5;--accent-dk:#059669;--accent-hv:#059669;--blue:#3b82f6;--blue-lt:#dbeafe;--amber:#f59e0b;--amber-lt:#fef3c7;--red:#ef4444;--red-lt:#fee2e2;--purple:#8b5cf6;--purple-lt:#ede9fe;--border:#e5e7eb;--shadow:0 12px 40px rgba(0,0,0,.10);--r:14px;--rs:10px;--rx:7px;--t:.2s cubic-bezier(.4,0,.2,1);--f:'DM Sans','Segoe UI',system-ui,sans-serif}
+html,body{height:100%;font-family:var(--f);color:var(--text);background:transparent;overflow:hidden;user-select:none}
+input,textarea,select{user-select:text}
+#app{display:flex;flex-direction:column;height:100vh;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:var(--shadow),0 0 0 1px rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.12);animation:fadeIn .4s ease-out}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+#titlebar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;-webkit-app-region:drag;border-bottom:1px solid var(--border);flex-shrink:0}
+#titlebar .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;letter-spacing:-.3px}
+#titlebar .logo .ico{width:24px;height:24px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+#titlebar .logo .ico svg{width:14px;height:14px;color:#fff}
+#titlebar .ctrls{display:flex;gap:4px;-webkit-app-region:no-drag}
+#titlebar .ctrls button{width:28px;height:28px;border:none;background:0;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all var(--t)}
+#titlebar .ctrls button:hover{background:var(--bg3);color:var(--text)}
+#tabs{display:flex;padding:0 10px;gap:1px;border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--text2);border:none;background:0;cursor:pointer;border-bottom:2px solid transparent;transition:all var(--t);font-family:var(--f)}.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;flex-direction:column;flex:1;overflow:hidden}.panel.active{display:flex}
+.sweep-header{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+.folder-selector{display:flex;align-items:center;gap:8px}
+.folder-path{flex:1;padding:7px 12px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;font-family:var(--f);background:var(--bg);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:34px;display:flex;align-items:center}
+.folder-path.empty{color:var(--text3);font-style:italic}
+.btn{padding:7px 13px;border:none;border-radius:var(--rx);font-size:11.5px;font-weight:600;font-family:var(--f);cursor:pointer;transition:all var(--t);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent-hv);transform:translateY(-1px)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--bg2);color:var(--text)}.btn-secondary:hover{background:var(--bg3)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center}
+.sweep-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.sweep-body::-webkit-scrollbar{width:5px}.sweep-body::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:10px}
+.sweep-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;text-align:center;padding:30px}
+.sweep-welcome .sw-icon{width:56px;height:56px;background:var(--accent-lt);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.sweep-welcome .sw-icon svg{width:28px;height:28px;color:var(--accent)}
+.sweep-welcome h2{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.sweep-welcome p{font-size:12.5px;color:var(--text2);line-height:1.6;max-width:300px}
+.stats-bar{display:flex;gap:6px;flex-wrap:wrap}
+.stat-card{flex:1;min-width:70px;padding:8px 10px;background:var(--bg2);border-radius:var(--rs);display:flex;flex-direction:column;gap:1px}
+.stat-card .sv{font-size:16px;font-weight:700}.stat-card .sl{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.file-list{display:flex;flex-direction:column;gap:3px}
+.file-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rx);font-size:11.5px;transition:all var(--t)}
+.file-item:hover{border-color:var(--accent);background:rgba(16,185,129,.03)}
+.file-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:700;text-transform:uppercase}
+.file-info{flex:1;min-width:0}.file-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-meta{font-size:10px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-dest{font-size:10px;font-weight:600;color:var(--accent);padding:2px 6px;background:var(--accent-lt);border-radius:4px;white-space:nowrap;flex-shrink:0}
+.file-dest.new-folder{color:var(--blue);background:var(--blue-lt)}
+.sweep-actions{padding:10px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sweep-actions .spacer{flex:1}
+#delete-src-label{cursor:pointer;user-select:none;align-items:center;gap:5px;padding:4px 8px;border:1.5px solid var(--red);border-radius:var(--rx);background:var(--red-lt)}
+.progress-bar{width:100%;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:4px 0}.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0}
+.progress-text{font-size:11px;color:var(--text2);text-align:center}
+/* Strategy cards */
+.strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.strat-card{border:1.5px solid var(--border);border-radius:var(--rs);padding:10px;cursor:pointer;transition:all var(--t);display:flex;flex-direction:column;gap:3px}
+.strat-card:hover{border-color:var(--accent);background:rgba(16,185,129,.02)}
+.strat-card.selected{border-color:var(--accent);background:var(--accent-lt)}
+.strat-card .sc-icon{font-size:18px;line-height:1}
+.strat-card .sc-name{font-size:12px;font-weight:700}
+.strat-card .sc-desc{font-size:10px;color:var(--text2);line-height:1.4}
+.strat-card.selected .sc-desc{color:var(--accent-dk)}
+/* Deep scan toggle */
+.scan-toggle{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border-radius:var(--rx);font-size:11.5px}
+.scan-toggle .st-label{flex:1;font-weight:500}
+.scan-toggle .st-desc{font-size:10px;color:var(--text2)}
+.sw{position:relative;width:34px;height:18px;flex-shrink:0}.sw input{opacity:0;width:0;height:0}
+.sw .sl{position:absolute;inset:0;background:var(--border);border-radius:17px;cursor:pointer;transition:all var(--t)}
+.sw .sl::before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:#fff;border-radius:50%;transition:all var(--t);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.sw input:checked+.sl{background:var(--accent)}.sw input:checked+.sl::before{transform:translateX(16px)}
+.deep-badge{display:inline-block;padding:1px 5px;background:var(--purple-lt);color:var(--purple);border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.3px}
+/* Panels: log, settings */
+#log-panel{padding:14px;overflow-y:auto;gap:10px;position:relative;flex:1}#log-panel::-webkit-scrollbar{width:5px}#log-panel::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:10px}
+.log-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:6px;color:var(--text2);font-size:12.5px;padding:40px}
+.log-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--rs);transition:all var(--t);margin-bottom:6px}
+.log-item:hover{border-color:var(--accent);background:rgba(16,185,129,.02)}
+.log-body{flex:1;min-width:0}.log-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.log-meta{font-size:10px;color:var(--text2);margin-top:2px}
+.log-actions{display:flex;gap:3px}.log-actions button{width:26px;height:26px;border:none;border-radius:6px;background:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all var(--t)}
+.log-actions .undo-btn:hover{background:var(--amber-lt);color:var(--amber)}.log-actions .del-btn:hover{background:var(--red-lt);color:var(--red)}.log-actions .view-btn:hover{background:var(--blue-lt);color:var(--blue)}
+.log-detail-overlay{position:absolute;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;border-radius:18px}.log-detail-overlay.active{display:flex}
+.log-detail-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}.log-detail-header h3{font-size:13px;font-weight:600;flex:1}
+.log-detail-body{flex:1;overflow-y:auto;padding:14px 16px}.log-detail-body::-webkit-scrollbar{width:5px}.log-detail-body::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:10px}
+.log-move-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:var(--rx);font-size:11.5px;border:1px solid var(--border);margin-bottom:3px}.log-move-item .arrow{color:var(--accent);font-weight:600;flex-shrink:0}
+#settings-panel{padding:14px;overflow-y:auto;gap:12px;flex:1}#settings-panel::-webkit-scrollbar{width:5px}#settings-panel::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:10px}
+.sg{display:flex;flex-direction:column;gap:4px}.sg label{font-size:10.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.sg input,.sg select,.sg textarea{padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;font-family:var(--f);background:var(--bg);color:var(--text);outline:none;transition:all var(--t)}
+.sg input:focus,.sg select:focus,.sg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+.sg input[type="password"]{letter-spacing:1px}.sg textarea{resize:vertical;min-height:50px;line-height:1.5}
+.save-btn{padding:7px 14px;border:none;border-radius:var(--rx);background:var(--accent);color:#fff;font-size:12px;font-weight:600;font-family:var(--f);cursor:pointer;transition:all var(--t);align-self:flex-start}.save-btn:hover{background:var(--accent-hv)}
+.save-st{font-size:11px;opacity:0;transition:opacity .3s;margin-left:8px;color:var(--accent)}.save-st.vis{opacity:1}
+.snote{font-size:10.5px;color:var(--text2);line-height:1.5;background:var(--bg2);padding:7px 10px;border-radius:var(--rx)}
+.section-title{font-size:12px;font-weight:700;color:var(--text);padding:5px 0 2px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.provider-card{border:1.5px solid var(--border);border-radius:var(--rs);padding:10px;display:flex;flex-direction:column;gap:6px;transition:all var(--t);cursor:pointer;margin-bottom:5px}
+.provider-card:hover{border-color:var(--accent)}.provider-card.selected{border-color:var(--accent);background:rgba(16,185,129,.03)}
+.provider-card .pc-head{display:flex;align-items:center;gap:8px}
+.provider-card .pc-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);transition:all var(--t);flex-shrink:0}
+.provider-card.selected .pc-dot{border-color:var(--accent);background:var(--accent)}
+.provider-card .pc-name{font-size:12.5px;font-weight:600}.provider-card .pc-desc{font-size:10.5px;color:var(--text2)}
+.provider-card .key-input{display:none}.provider-card.selected .key-input{display:block}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);padding:10px 18px;border-radius:var(--rs);font-size:12px;font-weight:500;font-family:var(--f);z-index:999;transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}.toast.success{background:#065f46;color:#fff}.toast.error{background:#991b1b;color:#fff}.toast.info{background:#1e40af;color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;display:none;align-items:center;justify-content:center;border-radius:18px}.modal-overlay.active{display:flex}
+.modal{background:var(--bg);border-radius:var(--r);padding:20px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:modalIn .25s ease-out}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:8px}.modal p{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:14px}.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+@keyframes spin{to{transform:rotate(360deg)}}.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.dupe-group{border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;margin-bottom:6px;transition:all var(--t)}.dupe-group:hover{border-color:var(--amber)}
+.dupe-group-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;margin-bottom:6px}
+.dupe-group-header .dg-count{font-size:10px;color:#fff;background:var(--amber);border-radius:10px;padding:1px 7px;font-weight:700}
+.dupe-keep{background:rgba(16,185,129,.05);border-color:var(--accent) !important}
+.dupe-remove{background:rgba(239,68,68,.03);opacity:.7}
+</style></head><body>
+<div id="app">
+  <div id="titlebar"><div class="logo"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></div>CleanSweep</div>
+    <div class="ctrls"><button onclick="api.minimizeWindow()" title="Minimize"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button><button onclick="api.closeWindow()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div></div>
+  <div id="tabs"><button class="tab active" data-panel="sweep">Sweep</button><button class="tab" data-panel="dupes">Dupes</button><button class="tab" data-panel="log">History</button><button class="tab" data-panel="settings">Settings</button></div>
+  <div id="sweep-panel" class="panel active">
+    <div class="sweep-header">
+      <div class="folder-selector"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;width:46px;flex-shrink:0">Source</div><div id="folder-path" class="folder-path empty">Select a folder…</div>
+        <button class="btn btn-secondary btn-icon" onclick="selectFolder()" title="Browse"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+        <button class="btn btn-secondary btn-icon" onclick="openCurrentFolder()" title="Open" id="open-folder-btn" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button></div>
+      <div class="folder-selector" id="dest-row" style="display:none"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;width:46px;flex-shrink:0">Dest</div><div id="dest-path" class="folder-path" style="font-size:11px"></div>
+        <button class="btn btn-secondary btn-icon" onclick="selectDestFolder()" title="Change"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+    </div>
+    <div class="sweep-body" id="sweep-body"><div class="sweep-welcome"><div class="sw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div><h2>Ready to tidy up</h2><p>Select a folder and CleanSweep will use AI to intelligently sort your files into organized categories.</p></div></div>
+    <div class="sweep-actions" id="sweep-actions" style="display:none">
+      <button class="btn btn-primary" id="scan-btn" onclick="startScan()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Scan</button>
+      <button class="btn btn-primary" id="analyze-btn" onclick="analyzeFiles()" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg> Analyze with AI</button>
+      <button class="btn btn-primary" id="execute-btn" onclick="executeSweep()" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Execute</button>
+      <label id="delete-src-label" style="display:none"><input type="checkbox" id="delete-src-check" style="accent-color:var(--red);margin:0"> <span style="font-size:11px;font-weight:500;color:var(--red)">Delete from source</span></label>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" id="reset-btn" onclick="resetSweep()" style="display:none">Reset</button>
+    </div>
+  </div>
+  <div id="dupes-panel" class="panel">
+    <div class="sweep-header">
+      <div class="folder-selector"><div style="font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;width:46px;flex-shrink:0">Folder</div><div id="dupes-folder-path" class="folder-path empty">Select a folder to scan for duplicates…</div>
+        <button class="btn btn-secondary btn-icon" onclick="dupesSelectFolder()" title="Browse"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button></div>
+    </div>
+    <div class="sweep-body" id="dupes-body"><div class="sweep-welcome"><div class="sw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><rect x="9" y="3" width="12" height="13" rx="2"/></svg></div><h2>Clear Duplicates</h2><p>Finds files like <strong>report (1).pdf</strong> or <strong>photo~2.jpg</strong> and keeps only the most recent version. Older copies are moved to a Duplicates folder.</p></div></div>
+    <div class="sweep-actions" id="dupes-actions" style="display:none">
+      <button class="btn btn-primary" id="dupes-scan-btn" onclick="dupesScan()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Find Dupes</button>
+      <button class="btn btn-danger" id="dupes-clean-btn" onclick="dupesClean()" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Clean Dupes</button>
+      <span class="spacer"></span>
+      <button class="btn btn-secondary btn-sm" id="dupes-reset-btn" onclick="dupesReset()" style="display:none">Reset</button>
+    </div>
+  </div>
+  <div id="log-panel" class="panel"><div class="log-empty" id="log-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No sweep history yet</div><div id="log-list"></div>
+    <div class="log-detail-overlay" id="log-detail"><div class="log-detail-header"><button class="btn btn-secondary btn-sm" onclick="closeLogDetail()">← Back</button><h3 id="log-detail-title">Details</h3><button class="btn btn-secondary btn-sm" onclick="undoFromDetail()">Undo All</button></div><div class="log-detail-body" id="log-detail-body"></div></div></div>
+  <div id="settings-panel" class="panel">
+    <div class="section-title">AI Provider</div><div id="provider-cards"></div>
+    <div class="section-title" style="margin-top:4px">Model</div><div class="sg"><select id="model-select"></select></div>
+    <div class="section-title" style="margin-top:4px">Deep Scan</div>
+    <div class="snote" style="margin-bottom:4px">Choose which file types to read content from during deep scan. Content is used for smarter AI grouping. Sensitive data is automatically redacted before sending.</div>
+    <div id="deep-scan-types" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    <div class="sg" style="margin-top:4px"><label>Token budget (content chars sent to AI)</label><select id="token-budget"><option value="15000">Low (~15K — fast, cheap)</option><option value="30000">Medium (~30K — balanced)</option><option value="60000">High (~60K — thorough)</option></select></div>
+    <div class="section-title" style="margin-top:4px">Behavior</div>
+    <div class="sg"><label>Custom instructions (optional)</label><textarea id="custom-instructions" placeholder="E.g. 'Group design files together'…"></textarea></div>
+    <div class="sg"><label>Ignore extensions (comma-separated)</label><input type="text" id="ignore-exts" placeholder=".tmp, .log, .bak"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><button class="save-btn" onclick="saveSettings()">Save Settings</button><span class="save-st" id="save-status">✓ Saved</span></div>
+    <div class="snote" style="margin-top:6px">API keys are stored locally only. Get keys: Google AI Studio · Anthropic Console · OpenAI Platform</div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"></div></div>
+</div>
+<script>
+// ═══ STRATEGIES ═══
+const STRATEGIES = [
+  { id:'type', icon:'📂', name:'By File Type', desc:'Documents, Images, Videos, Music, Code, Archives…', prompt:'Organize files primarily by their file type/extension into clear categories like Documents, Images, Videos, Music, Code, Archives, Installers, Spreadsheets, Design Files, etc.' },
+  { id:'project', icon:'🧩', name:'By Project / Topic', desc:'AI groups related files by name patterns & content', prompt:'Analyze filenames, name patterns, and any content provided to group files by project or topic. Look for common prefixes, dates, client names, project codes. Create descriptive folder names like "Tax 2025", "Website Redesign", "Client Proposal". Fall back to type-based grouping only for files that don\'t fit a project.' },
+  { id:'date', icon:'📅', name:'By Date', desc:'Monthly or quarterly time buckets', prompt:'Organize files into date-based folders using their modification dates. Use format "YYYY-MM" (e.g. "2025-12", "2026-01"). Group files from the same month together regardless of type.' },
+  { id:'action', icon:'⚡', name:'By Priority / Action', desc:'Review Soon, Archive, Duplicates, Keep…', prompt:'Triage files into action-based categories: "Review Soon" (recent, important-looking docs), "Archive" (old files that can be stored away), "Installers & Setup" (exe/msi to clean up), "Screenshots" (screenshots/screen captures), "Possible Duplicates" (files with very similar names), "Keep & Organize" (everything else worth keeping). Be opinionated about what needs attention.' },
+  { id:'source', icon:'🌐', name:'By Source / Purpose', desc:'Work, Personal, Downloads, Screenshots…', prompt:'Infer where files likely came from and group by purpose: "Work Documents", "Personal", "School/Education", "Photos & Camera", "Screenshots", "Downloaded Software", "Email Attachments", "Web Downloads", "Media & Entertainment". Use filename patterns, types, and any content/metadata to make smart inferences.' },
+  { id:'custom', icon:'✏️', name:'Custom', desc:'Write your own organization rules', prompt:'' },
+];
+
+// ═══ DEEP SCAN CONFIG ═══
+const DEEP_SCAN_TYPES = [
+  { id:'documents', name:'Documents', exts:['.pdf','.docx','.doc'], default:true },
+  { id:'text', name:'Text & Notes', exts:['.txt','.md','.csv','.log','.rtf'], default:true },
+  { id:'code', name:'Code', exts:['.js','.ts','.py','.html','.css','.java','.c','.cpp','.h','.rb','.go','.rs','.sh','.bat','.ps1','.sql','.r','.json','.xml','.yaml','.yml','.ini','.cfg','.conf'], default:false },
+  { id:'spreadsheets', name:'Spreadsheets', exts:['.xlsx','.xls'], default:false },
+  { id:'presentations', name:'Presentations', exts:['.pptx','.ppt'], default:false },
+  { id:'images', name:'Images (EXIF)', exts:['.jpg','.jpeg','.png'], default:false },
+];
+const SENSITIVITY_PATTERNS = [
+  { type:'financial', patterns:[/\b\d{3}-\d{2}-\d{4}\b/g, /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, /\b(ssn|social\s*security|tax\s*return|w-?2|1099|routing\s*number|account\s*number|ein)\b/gi] },
+  { type:'medical', patterns:[/\b(diagnosis|prescription|patient\s*id|hipaa|medical\s*record|prognosis|treatment\s*plan)\b/gi] },
+  { type:'legal', patterns:[/\b(confidential|attorney.?client|privileged|under\s*nda|non.?disclosure)\b/gi] },
+  { type:'credentials', patterns:[/\b(password|api[_\s]?key|secret[_\s]?key|private[_\s]?key|access[_\s]?token|bearer)\b/gi, /^(AWS_|OPENAI_|ANTHROPIC_|DATABASE_|DB_|STRIPE_)/gm] },
+  { type:'personal_id', patterns:[/\b(passport|driver.?s?\s*licen[sc]e|national\s*id)\b/gi] },
+];
+const TOKEN_BUDGET = 30000; // ~30K tokens for file content in prompt (≈120K chars)
+
+// ═══ STATE ═══
+let state = {
+  folderPath: null, destPath: null, files: [], subfolders: [], plan: null,
+  phase: 'idle', currentLogDetail: null, strategy: 'type', deepScan: false,
+  settings: {
+    provider:'gemini', apiKeys:{gemini:'',claude:'',openai:''}, model:'',
+    customInstructions:'', ignoreExts:'',
+    deepScanTypes: DEEP_SCAN_TYPES.filter(t=>t.default).map(t=>t.id),
+    tokenBudget: TOKEN_BUDGET,
+  }
+};
+const PROVIDERS = [
+  { id:'gemini', name:'Google Gemini', desc:'Gemini 3 Flash — frontier speed, free tier', models:['gemini-3-flash-preview','gemini-2.5-flash','gemini-2.5-pro'] },
+  { id:'claude', name:'Anthropic Claude', desc:'Claude Opus 4.6 — best coding & reasoning', models:['claude-sonnet-4-20250514','claude-haiku-4-5-20251001','claude-opus-4-6'] },
+  { id:'openai', name:'OpenAI GPT', desc:'GPT-4.1 — excellent instruction following', models:['gpt-4.1-mini','gpt-4.1','gpt-4.1-nano','gpt-4o-mini','gpt-4o'] },
+];
+const EXT_COLORS = {
+  '.pdf':{bg:'#fee2e2',c:'#991b1b'},'.doc':{bg:'#dbeafe',c:'#1e40af'},'.docx':{bg:'#dbeafe',c:'#1e40af'},
+  '.xls':{bg:'#d1fae5',c:'#065f46'},'.xlsx':{bg:'#d1fae5',c:'#065f46'},'.csv':{bg:'#d1fae5',c:'#065f46'},
+  '.ppt':{bg:'#fef3c7',c:'#92400e'},'.pptx':{bg:'#fef3c7',c:'#92400e'},
+  '.jpg':{bg:'#fce7f3',c:'#9d174d'},'.jpeg':{bg:'#fce7f3',c:'#9d174d'},'.png':{bg:'#fce7f3',c:'#9d174d'},'.gif':{bg:'#fce7f3',c:'#9d174d'},'.webp':{bg:'#fce7f3',c:'#9d174d'},'.svg':{bg:'#fce7f3',c:'#9d174d'},
+  '.mp4':{bg:'#ede9fe',c:'#5b21b6'},'.mov':{bg:'#ede9fe',c:'#5b21b6'},'.avi':{bg:'#ede9fe',c:'#5b21b6'},'.mkv':{bg:'#ede9fe',c:'#5b21b6'},
+  '.mp3':{bg:'#fef3c7',c:'#92400e'},'.wav':{bg:'#fef3c7',c:'#92400e'},'.flac':{bg:'#fef3c7',c:'#92400e'},
+  '.zip':{bg:'#f3e8ff',c:'#6b21a8'},'.rar':{bg:'#f3e8ff',c:'#6b21a8'},'.7z':{bg:'#f3e8ff',c:'#6b21a8'},'.tar':{bg:'#f3e8ff',c:'#6b21a8'},
+  '.exe':{bg:'#fecaca',c:'#991b1b'},'.msi':{bg:'#fecaca',c:'#991b1b'},
+  '.js':{bg:'#fef9c3',c:'#854d0e'},'.ts':{bg:'#dbeafe',c:'#1d4ed8'},'.py':{bg:'#dbeafe',c:'#1e40af'},'.html':{bg:'#ffedd5',c:'#9a3412'},'.css':{bg:'#dbeafe',c:'#1e40af'},
+  '.txt':{bg:'#f3f4f6',c:'#374151'},'.md':{bg:'#f3f4f6',c:'#374151'},
+};
+
+// ═══ INIT ═══
+(async function init() {
+  const saved = await api.getSettings();
+  if (saved) state.settings = { ...state.settings, ...saved };
+  // Ensure deepScanTypes exists (for old settings files)
+  if (!state.settings.deepScanTypes) state.settings.deepScanTypes = DEEP_SCAN_TYPES.filter(t=>t.default).map(t=>t.id);
+  if (!state.settings.tokenBudget) state.settings.tokenBudget = TOKEN_BUDGET;
+  renderProviderCards(); updateModelSelect(); renderDeepScanTypes();
+  document.getElementById('custom-instructions').value = state.settings.customInstructions || '';
+  document.getElementById('ignore-exts').value = state.settings.ignoreExts || '';
+  document.getElementById('token-budget').value = String(state.settings.tokenBudget);
+})();
+
+// ═══ TABS ═══
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+    if (tab.dataset.panel === 'log') loadLogs();
+  });
+});
+
+// ═══ FOLDER SELECTION ═══
+async function selectFolder() {
+  const r = await api.selectFolder();
+  if (r.cancelled) return;
+  if (r.dangerous) { toast('⛔ ' + r.reason, 'error'); return; }
+  state.folderPath = r.path; state.files = []; state.plan = null; state.phase = 'idle';
+  const sep = navigator.platform.startsWith('Win') ? '\\' : '/';
+  state.destPath = r.path + sep + 'CleanUp';
+  document.getElementById('folder-path').textContent = r.path;
+  document.getElementById('folder-path').classList.remove('empty');
+  document.getElementById('open-folder-btn').style.display = '';
+  document.getElementById('dest-row').style.display = 'flex';
+  document.getElementById('dest-path').textContent = state.destPath;
+  document.getElementById('sweep-actions').style.display = 'flex';
+  showBtns('scan', 'Scan'); renderBody();
+}
+async function selectDestFolder() {
+  const r = await api.selectCleanupDest();
+  if (r.cancelled) return;
+  if (r.dangerous) { toast('⛔ ' + r.reason, 'error'); return; }
+  const sep = navigator.platform.startsWith('Win') ? '\\' : '/';
+  state.destPath = r.path + sep + 'CleanUp';
+  document.getElementById('dest-path').textContent = state.destPath;
+  if (state.phase === 'analyzed') { state.plan = null; state.phase = 'scanned'; showBtns('analyze'); }
+  toast('Destination updated', 'info');
+}
+function openCurrentFolder() { if (state.folderPath) api.openFolder(state.folderPath); }
+
+// ═══ SCAN ═══
+async function startScan() {
+  if (!state.folderPath) return;
+  // Capture custom instructions from whichever source is active
+  const inlineEl = document.getElementById('inline-custom');
+  if (inlineEl) state.settings.customInstructions = inlineEl.value;
+  else {
+    const settingsEl = document.getElementById('custom-instructions');
+    if (settingsEl) state.settings.customInstructions = settingsEl.value;
+  }
+  showBtns('none');
+  renderBody('<div style="display:flex;align-items:center;justify-content:center;flex:1;gap:10px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">Scanning files…</span></div>');
+  const result = await api.scanFolder(state.folderPath);
+  if (!result.success) { toast('Error: ' + result.error, 'error'); showBtns('scan'); renderBody(); return; }
+  const ign = (state.settings.ignoreExts || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  state.files = result.files.filter(f => !ign.includes(f.type.toLowerCase()));
+  const sub = await api.getSubfolders(state.destPath);
+  state.subfolders = sub.success ? sub.folders : [];
+  // Deep scan if enabled — only scan file types user has selected
+  if (state.deepScan && state.files.length > 0) {
+    const enabledExts = new Set();
+    for (const t of DEEP_SCAN_TYPES) {
+      if (state.settings.deepScanTypes.includes(t.id)) t.exts.forEach(e => enabledExts.add(e));
+    }
+    const scannable = state.files.filter(f => enabledExts.has(f.type.toLowerCase()));
+    if (scannable.length > 0) {
+      renderBody('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">Deep scanning ' + scannable.length + ' files…</span><span id="deep-progress" style="font-size:11px;color:var(--text3)">0 / ' + scannable.length + '</span></div>');
+      for (let i = 0; i < scannable.length; i++) {
+        const f = scannable[i];
+        try {
+          const meta = await api.deepScanFile(f.path);
+          if (meta && Object.keys(meta).length) {
+            // Sensitivity detection on extracted content
+            if (meta.content) {
+              const flags = detectSensitivity(meta.content);
+              if (flags.length) {
+                meta.sensitiveTypes = flags;
+                meta.contentRedacted = redactContent(meta.content, flags);
+              }
+            }
+            f.metadata = meta;
+          }
+        } catch(_) {}
+        const dp = document.getElementById('deep-progress');
+        if (dp) dp.textContent = (i+1) + ' / ' + scannable.length;
+      }
+    }
+  }
+  state.phase = 'scanned'; showBtns('analyze'); renderBody();
+  if (!state.files.length) { toast('No files found', 'info'); showBtns('scan'); }
+}
+
+// ═══ AI ANALYSIS ═══
+const BATCH_SIZE = 800; // files per AI call — Gemini/Claude can handle ~900 with 65K output
+const AI_TIMEOUT = 180000; // 3 minute timeout per batch
+
+// Max output tokens per provider (based on current model limits)
+const MAX_OUTPUT = {
+  gemini: 65536,   // Gemini 2.5/3 Flash/Pro all support 65K
+  claude: 64000,   // Claude 4.x family supports 64K
+  openai: 32768,   // GPT-4.1 family supports 32K, 4o supports 16K
+};
+
+async function analyzeFiles() {
+  if (!state.files.length) return;
+  const key = state.settings.apiKeys[state.settings.provider];
+  if (!key) { toast('Set your API key in Settings first', 'error'); return; }
+  // Re-capture custom instructions in case user edited them since scan
+  const inlineEl = document.getElementById('inline-custom');
+  if (inlineEl) state.settings.customInstructions = inlineEl.value;
+  showBtns('none');
+
+  try {
+    let allMoves = [], allNewFolders = [], summaries = [];
+    const batches = [];
+    for (let i = 0; i < state.files.length; i += BATCH_SIZE) {
+      batches.push(state.files.slice(i, i + BATCH_SIZE));
+    }
+
+    // Accumulate existing folders as we go so later batches know about folders from earlier ones
+    let knownFolders = [...state.subfolders];
+
+    for (let b = 0; b < batches.length; b++) {
+      const batchLabel = batches.length > 1 ? ` (batch ${b+1}/${batches.length})` : '';
+      renderBody(`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">AI is analyzing ${batches[b].length} files${batchLabel}…</span><span style="font-size:11px;color:var(--text3)">${state.files.length > BATCH_SIZE ? (b*BATCH_SIZE+1)+'-'+Math.min((b+1)*BATCH_SIZE,state.files.length)+' of '+state.files.length+' files' : 'This may take a moment'}</span></div>`);
+
+      const plan = await callAI(batches[b], knownFolders);
+      allMoves.push(...plan.moves);
+      allNewFolders.push(...plan.newFolders);
+      if (plan.summary) summaries.push(plan.summary);
+
+      // Add newly created folders to known list for next batch
+      for (const f of plan.newFolders) {
+        if (!knownFolders.includes(f)) knownFolders.push(f);
+      }
+      // Also add any folder names from moves
+      for (const m of plan.moves) {
+        if (!knownFolders.includes(m.folder)) knownFolders.push(m.folder);
+      }
+    }
+
+    const mergedPlan = {
+      moves: allMoves,
+      newFolders: [...new Set(allNewFolders)],
+      summary: summaries.length > 1
+        ? `Analyzed ${state.files.length} files in ${batches.length} batches. ${summaries[0]}`
+        : (summaries[0] || 'Organizing ' + allMoves.length + ' files')
+    };
+
+    state.plan = mergedPlan; state.phase = 'analyzed'; showBtns('execute'); renderBody();
+    const fc = [...new Set(mergedPlan.moves.map(m=>m.folder))].length;
+    toast(`AI suggests ${mergedPlan.moves.length} files → ${fc} folders`, 'success');
+  } catch (err) {
+    console.error(err);
+    const msg = err.message || String(err);
+    // Show a more helpful error for common issues
+    if (msg.includes('JSON')) toast('AI returned invalid response — try fewer files or a different model', 'error');
+    else if (msg.includes('timeout') || msg.includes('abort')) toast('AI request timed out — try a smaller batch or faster model', 'error');
+    else toast('AI error: ' + msg, 'error');
+    showBtns('analyze'); renderBody();
+  }
+}
+
+async function callAI(files, existingFolders) {
+  const p = state.settings.provider, key = state.settings.apiKeys[p];
+  const model = state.settings.model || PROVIDERS.find(x=>x.id===p).models[0];
+  const strat = STRATEGIES.find(s=>s.id===state.strategy);
+
+  // ── Token-budgeted file list builder ──
+  const fileEntries = files.map(f => {
+    const base = `- "${f.name}" | ${f.type} | ${f.sizeHuman} | modified:${f.modified.split('T')[0]}`;
+    let metaLine = '';
+    if (f.metadata) {
+      const m = f.metadata;
+      if (m.title) metaLine += ` | title:"${m.title}"`;
+      if (m.author) metaLine += ` | author:${m.author}`;
+      if (m.keywords) metaLine += ` | keywords:${m.keywords}`;
+      if (m.subject) metaLine += ` | subject:"${m.subject}"`;
+      if (m.camera) metaLine += ` | camera:${m.camera}`;
+      if (m.dateTaken) metaLine += ` | taken:${m.dateTaken}`;
+      if (m.isScreenshot || m.likelyScreenshot) metaLine += ` | [SCREENSHOT]`;
+      if (m.width && m.height) metaLine += ` | ${m.width}x${m.height}`;
+      if (m.pageEstimate) metaLine += ` | ~${m.pageEstimate}pg`;
+      if (m.sensitiveTypes && m.sensitiveTypes.length) metaLine += ` | [SENSITIVE: ${m.sensitiveTypes.join(', ')}]`;
+    }
+    const contentSrc = f.metadata?.contentRedacted || f.metadata?.content || null;
+    return { base, metaLine, contentSrc };
+  });
+
+  const baseTotalChars = fileEntries.reduce((a, e) => a + e.base.length + e.metaLine.length + 2, 0);
+  const budgetChars = (state.settings.tokenBudget || TOKEN_BUDGET) * 4;
+  const contentBudgetChars = Math.max(0, budgetChars - baseTotalChars - 2000);
+  const filesWithContent = fileEntries.filter(e => e.contentSrc);
+  const charsPerFile = filesWithContent.length > 0 ? Math.floor(contentBudgetChars / filesWithContent.length) : 0;
+  const maxContentLen = Math.min(Math.max(charsPerFile, 80), 1500);
+
+  const fl = fileEntries.map(e => {
+    let line = e.base + e.metaLine;
+    if (e.contentSrc && maxContentLen > 80) {
+      const preview = e.contentSrc.substring(0, maxContentLen).replace(/\n/g, ' ').trim();
+      line += `\n  Content: "${preview}${e.contentSrc.length > maxContentLen ? '…' : ''}"`;
+    }
+    return line;
+  }).join('\n');
+
+  const ef = existingFolders.length ? '\nExisting CleanUp folders (reuse these when appropriate):\n' + existingFolders.map(f=>'- '+f).join('\n') : '\nNo existing folders.';
+  const ci = (state.settings.customInstructions && strat.id !== 'custom') ? '\n\nADDITIONAL USER INSTRUCTIONS (follow these):\n' + state.settings.customInstructions : '';
+
+  let stratPrompt = strat.prompt;
+  if (strat.id === 'custom') {
+    const userInstr = state.settings.customInstructions || '';
+    stratPrompt = userInstr
+      ? 'The user has provided their own organization rules. Follow them exactly:\n\n' + userInstr + '\n\nThis is the PRIMARY directive. Organize files according to the above instructions, even if it differs from how you would normally categorize files.'
+      : 'Organize files into logical categories based on type, name patterns, and content.';
+  }
+
+  // Scale max output tokens to file count, capped by provider limit
+  // Budget ~50 tokens per file to account for thinking tokens (Gemini) and verbose responses
+  const providerMax = MAX_OUTPUT[p] || 32768;
+  const outputTokens = Math.min(Math.max(files.length * 50, 8192), providerMax);
+
+  const prompt = `You are a file organization assistant. Analyze these files and decide which folder each goes to.
+
+STRATEGY: ${strat.name}
+${stratPrompt}
+${ci}
+
+RULES:
+1. Files will be moved into organized subfolders at the user's chosen destination.
+2. Reuse existing subfolder names if files match well.
+3. Create clear, descriptive folder names. Keep names concise (1-3 words).
+4. Every file must be assigned to a folder. Use EXACT filenames.
+5. ${state.deepScan ? 'Metadata and content previews are provided — USE THEM to make smarter grouping decisions.' : 'Only filenames and basic metadata are available.'}
+
+FILES:
+${fl}
+${ef}
+
+Respond ONLY with valid JSON (no markdown, no backticks):
+{"moves":[{"file":"exact_filename.ext","folder":"FolderName","reason":"brief reason"}],"newFolders":["NewFolder1"],"summary":"one sentence summary"}`;
+
+  if (p === 'gemini') return callGemini(key, model, prompt, outputTokens);
+  if (p === 'claude') return callClaude(key, model, prompt, outputTokens);
+  if (p === 'openai') return callOpenAI(key, model, prompt, outputTokens);
+  throw new Error('Unknown provider');
+}
+
+async function fetchWithTimeout(url, opts, timeout) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout || AI_TIMEOUT);
+  try {
+    const res = await fetch(url, { ...opts, signal: controller.signal });
+    return res;
+  } finally { clearTimeout(timer); }
+}
+
+async function callGemini(key, model, prompt, outputTokens) {
+  const genConfig = { temperature: 0.3, maxOutputTokens: outputTokens };
+  if (model.startsWith('gemini-3')) genConfig.thinkingConfig = { thinkingLevel: 'MINIMAL' };
+  const res = await fetchWithTimeout(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig: genConfig })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Gemini error '+res.status); }
+  const d = await res.json();
+  const parts = d.candidates?.[0]?.content?.parts || [];
+  const textPart = parts.find(p => p.text) || parts[0] || {};
+  return parseAI(textPart.text || '');
+}
+async function callClaude(key, model, prompt, outputTokens) {
+  const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({ model, max_tokens: outputTokens, temperature:0.3, messages:[{role:'user',content:prompt}] })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'Claude error '+res.status); }
+  const d = await res.json(); return parseAI(d.content?.[0]?.text || '');
+}
+async function callOpenAI(key, model, prompt, outputTokens) {
+  const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({ model, temperature:0.3, max_tokens: outputTokens, messages:[{role:'user',content:prompt}] })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'OpenAI error '+res.status); }
+  const d = await res.json(); return parseAI(d.choices?.[0]?.message?.content || '');
+}
+function parseAI(text) {
+  if (!text || !text.trim()) throw new Error('Empty AI response');
+  let c = text.trim();
+  if (c.startsWith('```')) c = c.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
+  // Try parsing as-is first
+  try {
+    const p = JSON.parse(c);
+    if (!p.moves || !Array.isArray(p.moves)) throw new Error('Invalid AI response');
+    p.moves = p.moves.filter(m => m.file && m.folder);
+    if (!p.newFolders) p.newFolders = [];
+    if (!p.summary) p.summary = 'Organizing ' + p.moves.length + ' files';
+    return p;
+  } catch (firstErr) {
+    // Try to salvage truncated JSON — find last complete move entry
+    const movesMatch = c.match(/"moves"\s*:\s*\[/);
+    if (movesMatch) {
+      // Find the last complete object before truncation
+      const lastGoodBrace = c.lastIndexOf('}');
+      if (lastGoodBrace > movesMatch.index) {
+        const repaired = c.substring(0, lastGoodBrace + 1) + '],"newFolders":[],"summary":"Partial result — response was truncated"}';
+        try {
+          const p = JSON.parse(repaired);
+          if (p.moves && Array.isArray(p.moves)) {
+            p.moves = p.moves.filter(m => m.file && m.folder);
+            if (p.moves.length > 0) {
+              p.summary = `Partial: ${p.moves.length} files categorized (response was truncated)`;
+              if (!p.newFolders) p.newFolders = [];
+              return p;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    throw new Error('Failed to parse AI response: ' + firstErr.message.substring(0, 100));
+  }
+}
+
+// ═══ EXECUTE ═══
+async function executeSweep() {
+  if (!state.plan?.moves.length) return;
+  const srcName = state.folderPath.split(/[\\/]/).pop();
+  const delSrc = document.getElementById('delete-src-check').checked;
+  const actionWord = delSrc ? 'Move' : 'Copy';
+  showModal('Confirm Sweep', actionWord + ' ' + state.plan.moves.length + ' files from <strong>' + esc(srcName) + '</strong> into:<br><span style="font-size:11px;color:var(--accent);word-break:break-all">' + esc(state.destPath) + '</span><br><br>Strategy: <strong>' + esc(STRATEGIES.find(s=>s.id===state.strategy).name) + '</strong>' + (delSrc ? '<br><span style="font-size:11px;color:var(--red)">⚠ Files will be removed from source after copying</span>' : '') + '<br>This can be undone from History.', [
+    {label:'Cancel',cls:'btn-secondary',action:closeModal},
+    {label: actionWord,cls: delSrc ? 'btn-danger' : 'btn-primary',action:doExecute}
+  ]);
+}
+async function doExecute() {
+  closeModal(); state.phase = 'executing'; showBtns('none');
+  const delSrc = document.getElementById('delete-src-check').checked;
+
+  // Disk space check — copying always needs space
+  const totalSize = state.files.reduce((a, f) => a + (f.size || 0), 0);
+  const disk = await api.checkDiskSpace(state.destPath);
+  if (disk.success && disk.freeBytes > 0 && totalSize > disk.freeBytes * 0.9) {
+    const needed = humanSz(totalSize), avail = humanSz(disk.freeBytes);
+    renderBody(`<div class="sweep-welcome" style="padding:20px"><div class="sw-icon" style="background:var(--red-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" width="28" height="28"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><h2>Low Disk Space</h2><p>Need approximately <strong>${needed}</strong> but only <strong>${avail}</strong> available on the destination drive.</p></div>`);
+    showBtns('execute');
+    return;
+  }
+
+  const moves = state.plan.moves, logMoves = [];
+  let ok = 0, err = 0, deleted = 0;
+  const sep = navigator.platform.startsWith('Win') ? '\\' : '/';
+  const cleanupBase = state.destPath;
+  await api.createFolder(cleanupBase);
+  for (let i = 0; i < moves.length; i++) {
+    const m = moves[i], file = state.files.find(f => f.name === m.file);
+    if (!file) { err++; continue; }
+    const destDir = cleanupBase + sep + m.folder;
+    await api.createFolder(destDir);
+    renderProgress(i+1, moves.length, file.name);
+    const destPath = destDir + sep + file.name;
+    // Always copy first
+    const r = await api.copyFile(file.path, destPath);
+    if (r.success) {
+      logMoves.push({name:file.name,src:file.path,dest:r.finalDest||destPath,folder:m.folder,reason:m.reason||'',deletedFromSource:false});
+      ok++;
+    }
+    else { err++; }
+  }
+
+  // Delete sources in a second pass if requested (safer — all copies confirmed first)
+  if (delSrc && ok > 0) {
+    renderBody('<div style="display:flex;align-items:center;justify-content:center;flex:1;gap:10px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">Removing source files…</span></div>');
+    for (const lm of logMoves) {
+      const dr = await api.deleteFile(lm.src);
+      if (dr.success) { lm.deletedFromSource = true; deleted++; }
+    }
+  }
+
+  const stratObj = STRATEGIES.find(s=>s.id===state.strategy) || {};
+  await api.saveSweepLog({ log: {
+    timestamp: new Date().toISOString(), rootFolder: state.folderPath, destPath: state.destPath,
+    provider: state.settings.provider, model: state.settings.model,
+    strategy: state.strategy, strategyName: stratObj.name || state.strategy,
+    customInstructions: state.strategy === 'custom' ? (state.settings.customInstructions || '') : '',
+    deepScan: state.deepScan, deletedFromSource: delSrc,
+    summary: state.plan.summary, filesTotal: moves.length, filesSuccess: ok, filesError: err, moves: logMoves
+  }});
+  state.phase = 'done';
+  const verb = delSrc ? ('moved (' + deleted + ' deleted from source)') : 'copied';
+  toast('Sweep complete! ' + ok + ' files ' + verb + (err ? ', ' + err + ' errors' : ''), ok > 0 ? 'success' : 'error');
+  renderDone(ok, err, logMoves); showBtns('scan', 'New Sweep');
+}
+
+// ═══ RENDERING ═══
+function showBtns(mode, scanLabel) {
+  const scanBtn = document.getElementById('scan-btn');
+  scanBtn.style.display = mode==='scan'?'':'none';
+  if (scanLabel) scanBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> ' + scanLabel;
+  document.getElementById('analyze-btn').style.display = mode==='analyze'?'':'none';
+  document.getElementById('execute-btn').style.display = mode==='execute'?'':'none';
+  document.getElementById('delete-src-label').style.display = mode==='execute'?'flex':'none';
+  document.getElementById('reset-btn').style.display = (mode==='analyze'||mode==='execute')?'':'none';
+}
+function renderBody(html) {
+  const body = document.getElementById('sweep-body');
+  if (html) { body.innerHTML = html; return; }
+  if (!state.folderPath) { body.innerHTML = '<div class="sweep-welcome"><div class="sw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div><h2>Ready to tidy up</h2><p>Select a folder and CleanSweep will use AI to organize your files.</p></div>'; return; }
+  if (state.phase === 'idle' || !state.files.length) { renderStrategyPicker(); return; }
+  if (state.phase === 'scanned') { renderScanned(); return; }
+  if (state.phase === 'analyzed') { renderPlan(); return; }
+}
+
+function renderStrategyPicker() {
+  const body = document.getElementById('sweep-body');
+  let h = '<div style="font-size:12px;font-weight:700;margin-bottom:2px">Choose a Strategy</div>';
+  h += '<div class="strat-grid">';
+  for (const s of STRATEGIES) {
+    h += `<div class="strat-card ${state.strategy===s.id?'selected':''}" onclick="pickStrategy('${s.id}')"><div class="sc-icon">${s.icon}</div><div class="sc-name">${s.name}</div><div class="sc-desc">${s.desc}</div></div>`;
+  }
+  h += '</div>';
+  // Custom instructions inline if custom selected
+  if (state.strategy === 'custom') {
+    h += `<div class="sg" style="margin-top:6px"><label>Your instructions</label><textarea id="inline-custom" style="min-height:60px;font-size:12px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:var(--f);outline:none;resize:vertical" placeholder="E.g. 'Sort photos by year, code by language, put all tax docs together…'">${esc(state.settings.customInstructions||'')}</textarea></div>`;
+  }
+  // Deep scan toggle
+  h += `<div class="scan-toggle" style="margin-top:6px"><div><div class="st-label">Deep Scan <span class="deep-badge">BETA</span></div><div class="st-desc">Read file content, metadata & EXIF. Smarter grouping, slower scan, more tokens.</div></div><label class="sw"><input type="checkbox" ${state.deepScan?'checked':''} onchange="state.deepScan=this.checked"><span class="sl"></span></label></div>`;
+  body.innerHTML = h;
+}
+
+function pickStrategy(id) {
+  state.strategy = id;
+  if (state.phase === 'analyzed') { state.plan = null; state.phase = 'scanned'; showBtns('analyze'); }
+  if (state.phase === 'scanned') { renderScanned(); return; }
+  renderBody();
+}
+
+function renderScanned() {
+  const body = document.getElementById('sweep-body');
+  const totalSz = state.files.reduce((a,f)=>a+f.size,0);
+  const types = new Set(state.files.map(f=>f.type)).size;
+  const deepCount = state.files.filter(f=>f.metadata).length;
+  let h = '<div class="stats-bar">';
+  h += `<div class="stat-card"><span class="sv">${state.files.length}</span><span class="sl">Files</span></div>`;
+  h += `<div class="stat-card"><span class="sv">${humanSz(totalSz)}</span><span class="sl">Size</span></div>`;
+  h += `<div class="stat-card"><span class="sv">${types}</span><span class="sl">Types</span></div>`;
+  h += `<div class="stat-card"><span class="sv">${state.subfolders.length}</span><span class="sl">Existing</span></div>`;
+  if (deepCount > 0) h += `<div class="stat-card"><span class="sv">${deepCount}</span><span class="sl">Deep</span></div>`;
+  h += '</div>';
+  if (state.subfolders.length) {
+    h += '<div style="font-size:10.5px;color:var(--text2);font-weight:500;margin-top:2px">EXISTING: ' + state.subfolders.map(f=>'<span style="display:inline-block;padding:1px 5px;background:var(--accent-lt);color:var(--accent-dk);border-radius:3px;margin:1px 2px;font-size:9.5px;font-weight:600">'+esc(f)+'</span>').join(' ') + '</div>';
+  }
+  // Strategy reminder
+  const strat = STRATEGIES.find(s=>s.id===state.strategy);
+  h += `<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg2);border-radius:var(--rx);font-size:11px"><span style="font-size:16px">${strat.icon}</span><div><strong>${strat.name}</strong>${state.deepScan?' <span class="deep-badge">DEEP</span>':''}<div style="color:var(--text2);font-size:10px">${strat.desc}</div></div><button class="btn btn-sm btn-secondary" style="margin-left:auto" onclick="state.phase='idle';renderBody();showBtns('scan')">Change</button></div>`;
+  h += '<div style="font-size:10.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">Files Found</div><div class="file-list">';
+  for (const f of state.files) {
+    const ec = EXT_COLORS[f.type]||{bg:'#f3f4f6',c:'#6b7280'};
+    const ext = f.type.replace('.','') || '?';
+    let metaStr = f.sizeHuman + ' · ' + f.modified.split('T')[0];
+    if (f.metadata) {
+      const m = f.metadata;
+      if (m.title) metaStr += ' · "' + m.title.substring(0,30) + '"';
+      else if (m.camera) metaStr += ' · ' + m.camera.substring(0,20);
+      else if (m.isScreenshot || m.likelyScreenshot) metaStr += ' · Screenshot';
+      else if (m.content) metaStr += ' · has content';
+      if (m.sensitiveTypes && m.sensitiveTypes.length) metaStr += ' · ⚠ ' + m.sensitiveTypes.join(', ');
+    }
+    const badges = [];
+    if (f.metadata) badges.push('<span class="deep-badge">META</span>');
+    if (f.metadata?.sensitiveTypes?.length) badges.push('<span style="display:inline-block;padding:1px 5px;background:var(--amber-lt);color:var(--amber);border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.3px">🔒 SENSITIVE</span>');
+    h += `<div class="file-item"><div class="file-icon" style="background:${ec.bg};color:${ec.c}">${ext.substring(0,4)}</div><div class="file-info"><div class="file-name">${esc(f.name)}</div><div class="file-meta">${esc(metaStr)}</div></div>${badges.join(' ')}</div>`;
+  }
+  h += '</div>'; body.innerHTML = h;
+}
+
+function renderPlan() {
+  const body = document.getElementById('sweep-body'), plan = state.plan;
+  const folders = [...new Set(plan.moves.map(m=>m.folder))];
+  const strat = STRATEGIES.find(s=>s.id===state.strategy);
+  let h = `<div style="padding:9px 11px;background:var(--accent-lt);border-radius:var(--rs);border:1px solid var(--accent)"><div style="font-size:11.5px;font-weight:600;color:var(--accent-dk);display:flex;align-items:center;gap:6px">${strat.icon} AI Analysis Complete${state.deepScan?' <span class="deep-badge">DEEP</span>':''}</div><div style="font-size:11px;color:var(--text);margin-top:2px">${esc(plan.summary)}</div><div style="font-size:10px;color:var(--text2);margin-top:2px">Strategy: <strong>${esc(strat.name)}</strong>${state.strategy==='custom'&&state.settings.customInstructions?' — '+esc(state.settings.customInstructions.substring(0,60))+(state.settings.customInstructions.length>60?'…':''):''} · ${plan.moves.length} files → ${folders.length} folders${plan.newFolders.length?' ('+plan.newFolders.length+' new)':''}</div></div>`;
+  for (const folder of folders) {
+    const isNew = plan.newFolders.includes(folder);
+    const fm = plan.moves.filter(m=>m.folder===folder);
+    h += `<div style="margin-top:3px"><div style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;padding:3px 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${isNew?'var(--blue)':'var(--accent)'}" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(folder)}${isNew?'<span style="font-size:8.5px;padding:1px 5px;background:var(--blue-lt);color:var(--blue);border-radius:3px;font-weight:700">NEW</span>':''}<span style="font-size:9.5px;color:var(--text3);margin-left:auto">${fm.length}</span></div><div class="file-list">`;
+    for (const m of fm) {
+      const file = state.files.find(f=>f.name===m.file);
+      const ec = file?(EXT_COLORS[file.type]||{bg:'#f3f4f6',c:'#6b7280'}):{bg:'#f3f4f6',c:'#6b7280'};
+      const ext = file?file.type.replace('.',''):'?';
+      h += `<div class="file-item"><div class="file-icon" style="background:${ec.bg};color:${ec.c}">${ext.substring(0,4)}</div><div class="file-info"><div class="file-name">${esc(m.file)}</div><div class="file-meta">${m.reason?esc(m.reason):(file?file.sizeHuman:'')}</div></div><div class="file-dest${isNew?' new-folder':''}">${esc(folder)}</div></div>`;
+    }
+    h += '</div></div>';
+  }
+  body.innerHTML = h;
+}
+function renderProgress(cur, tot, label) {
+  const pct = Math.round((cur/tot)*100);
+  document.getElementById('sweep-body').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:30px"><div class="spinner"></div><div style="font-size:14px;font-weight:600">Organizing files…</div><div style="width:100%;max-width:280px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-text">${cur} / ${tot} — ${pct}%</div></div><div style="font-size:11px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(label)}</div></div>`;
+}
+function renderDone(ok, errs, moves) {
+  const folders = [...new Set(moves.map(m=>m.folder))];
+  let h = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;text-align:center"><div style="width:48px;height:48px;background:${errs?'var(--amber-lt)':'var(--accent-lt)'};border-radius:14px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${errs?'var(--amber)':'var(--accent)'}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><h2 style="font-size:16px;font-weight:700">Sweep Complete!</h2><p style="font-size:12px;color:var(--text2)">${ok} file${ok!==1?'s':''} → ${folders.length} folder${folders.length!==1?'s':''}${errs?', '+errs+' error'+(errs!==1?'s':''):''}</p></div>`;
+  h += '<div class="file-list">';
+  for (const m of moves) h += `<div class="file-item"><div class="file-info"><div class="file-name">${esc(m.name)}</div></div><div class="file-dest">${esc(m.folder)}</div></div>`;
+  h += '</div>'; document.getElementById('sweep-body').innerHTML = h;
+}
+function resetSweep() { state.files=[]; state.plan=null; state.phase='idle'; showBtns('scan', 'Scan'); renderBody(); }
+
+// ═══ SENSITIVITY DETECTION & REDACTION ═══
+function detectSensitivity(text) {
+  const found = new Set();
+  for (const cat of SENSITIVITY_PATTERNS) {
+    for (const rx of cat.patterns) {
+      rx.lastIndex = 0;
+      if (rx.test(text)) { found.add(cat.type); break; }
+    }
+  }
+  return [...found];
+}
+function redactContent(text, sensitiveTypes) {
+  let redacted = text;
+  for (const cat of SENSITIVITY_PATTERNS) {
+    if (!sensitiveTypes.includes(cat.type)) continue;
+    for (const rx of cat.patterns) { rx.lastIndex = 0; redacted = redacted.replace(rx, `[REDACTED:${cat.type}]`); }
+  }
+  return redacted;
+}
+
+// ═══ CLEAR DUPES ═══
+let dupeState = { folderPath: null, groups: [], phase: 'idle' };
+
+// Duplicate name patterns: "file (1).pdf", "file (2).pdf", "file (Copy).pdf",
+// "file - Copy.pdf", "file - Copy (2).pdf", "file~1.pdf"
+function getBaseName(filename) {
+  const ext = filename.lastIndexOf('.') > 0 ? filename.substring(filename.lastIndexOf('.')) : '';
+  let name = ext ? filename.substring(0, filename.length - ext.length) : filename;
+  const origName = name;
+  // Strip patterns from end, repeatedly to handle "file (1) - Copy" etc.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    // " (1)", " (2)", " (Copy)", " (Copy 2)"
+    const parenMatch = name.match(/^(.+?)\s*\((?:\d+|Copy(?:\s*\d*)?)\)$/i);
+    if (parenMatch && parenMatch[1].trim()) { name = parenMatch[1].trimEnd(); changed = true; continue; }
+    // " - Copy", " - Copy (2)" (already stripped parens above)
+    const copyMatch = name.match(/^(.+?)\s*-\s*Copy$/i);
+    if (copyMatch && copyMatch[1].trim()) { name = copyMatch[1].trimEnd(); changed = true; continue; }
+    // "~1", "~2"
+    const tildeMatch = name.match(/^(.+?)~\d+$/);
+    if (tildeMatch && tildeMatch[1].trim()) { name = tildeMatch[1].trimEnd(); changed = true; continue; }
+  }
+  // If stripping emptied the name, use original (it's not really a dupe pattern)
+  if (!name.trim()) name = origName;
+  return (name + ext).toLowerCase();
+}
+
+async function dupesSelectFolder() {
+  const r = await api.selectFolder();
+  if (r.cancelled) return;
+  if (r.dangerous) { toast('⛔ ' + r.reason, 'error'); return; }
+  dupeState.folderPath = r.path; dupeState.groups = []; dupeState.phase = 'idle';
+  document.getElementById('dupes-folder-path').textContent = r.path;
+  document.getElementById('dupes-folder-path').classList.remove('empty');
+  document.getElementById('dupes-actions').style.display = 'flex';
+  document.getElementById('dupes-scan-btn').style.display = '';
+  document.getElementById('dupes-clean-btn').style.display = 'none';
+  document.getElementById('dupes-reset-btn').style.display = 'none';
+  dupesRenderBody();
+}
+
+async function dupesScan() {
+  if (!dupeState.folderPath) return;
+  document.getElementById('dupes-scan-btn').style.display = 'none';
+  document.getElementById('dupes-body').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;flex:1;gap:10px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">Scanning for duplicates…</span></div>';
+
+  const result = await api.scanFolder(dupeState.folderPath);
+  if (!result.success) { toast('Error: ' + result.error, 'error'); document.getElementById('dupes-scan-btn').style.display = ''; dupesRenderBody(); return; }
+
+  // Group files by base name
+  const groups = {};
+  for (const f of result.files) {
+    const base = getBaseName(f.name);
+    if (!groups[base]) groups[base] = [];
+    groups[base].push(f);
+  }
+
+  // Filter to only groups with 2+ files (actual duplicates)
+  dupeState.groups = Object.entries(groups)
+    .filter(([_, files]) => files.length > 1)
+    .map(([base, files]) => {
+      // Sort by modified date descending — first is the one to keep
+      files.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+      return { base, keep: files[0], dupes: files.slice(1) };
+    })
+    .sort((a, b) => b.dupes.length - a.dupes.length); // most dupes first
+
+  dupeState.phase = 'scanned';
+  if (dupeState.groups.length === 0) {
+    toast('No duplicates found!', 'success');
+    document.getElementById('dupes-scan-btn').style.display = '';
+    document.getElementById('dupes-scan-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Scan Again';
+  } else {
+    document.getElementById('dupes-clean-btn').style.display = '';
+    document.getElementById('dupes-reset-btn').style.display = '';
+  }
+  dupesRenderBody();
+}
+
+function dupesRenderBody() {
+  const body = document.getElementById('dupes-body');
+  if (!dupeState.folderPath) {
+    body.innerHTML = '<div class="sweep-welcome"><div class="sw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><rect x="9" y="3" width="12" height="13" rx="2"/></svg></div><h2>Clear Duplicates</h2><p>Finds files like <strong>report (1).pdf</strong> or <strong>photo~2.jpg</strong> and keeps only the most recent version. Older copies are moved to a Duplicates folder.</p></div>';
+    return;
+  }
+  if (dupeState.phase === 'idle') {
+    body.innerHTML = '<div class="sweep-welcome" style="padding:20px"><div class="sw-icon" style="background:var(--amber-lt)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" width="28" height="28"><path d="M16 16v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><rect x="9" y="3" width="12" height="13" rx="2"/></svg></div><h2>Ready to find dupes</h2><p>Click <strong>Find Dupes</strong> to scan for files with duplicate name patterns like (1), (2), ~1, Copy, etc.</p></div>';
+    return;
+  }
+  if (dupeState.groups.length === 0) {
+    body.innerHTML = '<div class="sweep-welcome" style="padding:20px"><div class="sw-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="28" height="28"><polyline points="20 6 9 17 4 12"/></svg></div><h2>No duplicates found</h2><p>Your folder is clean — no duplicate file patterns detected.</p></div>';
+    return;
+  }
+
+  const totalDupes = dupeState.groups.reduce((a, g) => a + g.dupes.length, 0);
+  const totalSize = dupeState.groups.reduce((a, g) => a + g.dupes.reduce((b, f) => b + f.size, 0), 0);
+
+  let h = '<div class="stats-bar">';
+  h += `<div class="stat-card"><span class="sv">${dupeState.groups.length}</span><span class="sl">Groups</span></div>`;
+  h += `<div class="stat-card"><span class="sv">${totalDupes}</span><span class="sl">Dupes</span></div>`;
+  h += `<div class="stat-card"><span class="sv">${humanSz(totalSize)}</span><span class="sl">Reclaimable</span></div>`;
+  h += '</div>';
+  h += '<div style="font-size:10px;color:var(--text2);padding:4px 0">✅ = keep (most recent) · 🗑️ = move to Duplicates folder</div>';
+
+  for (const g of dupeState.groups) {
+    h += '<div class="dupe-group">';
+    h += `<div class="dupe-group-header"><span class="dg-count">${g.dupes.length + 1}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.base)}</span></div>`;
+    // Keep file
+    const kec = EXT_COLORS[g.keep.type] || {bg:'#f3f4f6',c:'#6b7280'};
+    const kext = g.keep.type.replace('.','') || '?';
+    h += `<div class="file-item dupe-keep" style="margin-bottom:3px"><div class="file-icon" style="background:${kec.bg};color:${kec.c}">${kext.substring(0,4)}</div><div class="file-info"><div class="file-name">${esc(g.keep.name)}</div><div class="file-meta">${g.keep.sizeHuman} · ${g.keep.modified.split('T')[0]}</div></div><span style="font-size:10px;font-weight:700;color:var(--accent);padding:2px 6px;background:var(--accent-lt);border-radius:4px">✅ KEEP</span></div>`;
+    // Dupe files
+    for (const d of g.dupes) {
+      const dec = EXT_COLORS[d.type] || {bg:'#f3f4f6',c:'#6b7280'};
+      const dext = d.type.replace('.','') || '?';
+      h += `<div class="file-item dupe-remove" style="margin-bottom:2px"><div class="file-icon" style="background:${dec.bg};color:${dec.c}">${dext.substring(0,4)}</div><div class="file-info"><div class="file-name">${esc(d.name)}</div><div class="file-meta">${d.sizeHuman} · ${d.modified.split('T')[0]}</div></div><span style="font-size:10px;font-weight:700;color:var(--red);padding:2px 6px;background:var(--red-lt);border-radius:4px">🗑️ DUPE</span></div>`;
+    }
+    h += '</div>';
+  }
+  body.innerHTML = h;
+}
+
+async function dupesClean() {
+  const totalDupes = dupeState.groups.reduce((a, g) => a + g.dupes.length, 0);
+  const totalSize = dupeState.groups.reduce((a, g) => a + g.dupes.reduce((b, f) => b + f.size, 0), 0);
+  const sep = navigator.platform.startsWith('Win') ? '\\' : '/';
+  showModal('Clear Duplicates?',
+    'Move <strong>' + totalDupes + ' duplicate files</strong> (' + humanSz(totalSize) + ') to:<br><span style="font-size:11px;color:var(--amber);word-break:break-all">' + esc(dupeState.folderPath + sep + 'CleanUp' + sep + 'Duplicates') + '</span><br><br>The most recent version of each file will be kept. This can be undone from History.',
+    [
+      {label:'Cancel',cls:'btn-secondary',action:closeModal},
+      {label:'Clean Dupes',cls:'btn-danger',action:doCleanDupes}
+    ]
+  );
+}
+
+async function doCleanDupes() {
+  closeModal();
+  document.getElementById('dupes-clean-btn').style.display = 'none';
+  document.getElementById('dupes-reset-btn').style.display = 'none';
+  const sep = navigator.platform.startsWith('Win') ? '\\' : '/';
+  const destBase = dupeState.folderPath + sep + 'CleanUp' + sep + 'Duplicates';
+  await api.createFolder(destBase);
+
+  const allDupes = dupeState.groups.flatMap(g => g.dupes);
+  const logMoves = [];
+  let ok = 0, err = 0;
+
+  for (let i = 0; i < allDupes.length; i++) {
+    const f = allDupes[i];
+    const pct = Math.round(((i+1)/allDupes.length)*100);
+    document.getElementById('dupes-body').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:30px"><div class="spinner"></div><div style="font-size:14px;font-weight:600">Moving duplicates…</div><div style="width:100%;max-width:280px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-text">${i+1} / ${allDupes.length} — ${pct}%</div></div><div style="font-size:11px;color:var(--text2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</div></div>`;
+
+    const r = await api.copyFile(f.path, destBase + sep + f.name);
+    if (r.success) {
+      const dr = await api.deleteFile(f.path);
+      logMoves.push({name:f.name,src:f.path,dest:r.finalDest||(destBase+sep+f.name),folder:'Duplicates',reason:'Duplicate of base file',deletedFromSource:dr.success}); ok++;
+    }
+    else { err++; }
+  }
+
+  // Save to sweep log so it appears in History and can be undone
+  await api.saveSweepLog({ log: {
+    timestamp: new Date().toISOString(), rootFolder: dupeState.folderPath,
+    destPath: dupeState.folderPath + sep + 'CleanUp',
+    provider: 'local', model: 'dupe-detection',
+    strategy: 'dupes', deepScan: false, deletedFromSource: true,
+    summary: 'Cleared ' + ok + ' duplicate files (' + humanSz(allDupes.reduce((a,f)=>a+f.size,0)) + ' reclaimed)',
+    filesTotal: allDupes.length, filesSuccess: ok, filesError: err, moves: logMoves
+  }});
+
+  toast('Cleaned! ' + ok + ' duplicates moved' + (err ? ', ' + err + ' errors' : ''), ok > 0 ? 'success' : 'error');
+
+  // Show done state
+  let dh = `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;text-align:center"><div style="width:48px;height:48px;background:${err?'var(--amber-lt)':'var(--accent-lt)'};border-radius:14px;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${err?'var(--amber)':'var(--accent)'}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><h2 style="font-size:16px;font-weight:700">Dupes Cleared!</h2><p style="font-size:12px;color:var(--text2)">${ok} duplicate${ok!==1?'s':''} moved to Duplicates folder${err?', '+err+' error'+(err!==1?'s':''):''}</p></div>`;
+  dh += '<div class="file-list">';
+  for (const m of logMoves) dh += `<div class="file-item"><div class="file-info"><div class="file-name">${esc(m.name)}</div></div><div class="file-dest" style="color:var(--red);background:var(--red-lt)">Removed</div></div>`;
+  dh += '</div>';
+  document.getElementById('dupes-body').innerHTML = dh;
+
+  document.getElementById('dupes-scan-btn').style.display = '';
+  document.getElementById('dupes-scan-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Scan Again';
+  dupeState.groups = []; dupeState.phase = 'idle';
+}
+
+function dupesReset() {
+  dupeState.groups = []; dupeState.phase = 'idle';
+  document.getElementById('dupes-scan-btn').style.display = '';
+  document.getElementById('dupes-scan-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Find Dupes';
+  document.getElementById('dupes-clean-btn').style.display = 'none';
+  document.getElementById('dupes-reset-btn').style.display = 'none';
+  dupesRenderBody();
+}
+
+// ═══ LOGS ═══
+async function loadLogs() {
+  const result = await api.listSweepLogs();
+  // Cache for use by view/undo/delete handlers
+  const allLogs = (result.success && result.logs) ? result.logs : [];
+  state._logCache = allLogs;
+
+  const list = document.getElementById('log-list'), empty = document.getElementById('log-empty');
+  if (!allLogs.length) { empty.style.display='flex'; list.innerHTML=''; return; }
+  empty.style.display='none';
+  list.innerHTML = allLogs.map((log, idx) => {
+    if (log.error) return '';
+    const d = new Date(log.timestamp);
+    const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const fc = [...new Set((log.moves||[]).map(m=>m.folder))].length;
+    const stratIcon = log.strategy === 'dupes' ? '🔄' : (STRATEGIES.find(s=>s.id===log.strategy)||{}).icon || '📂';
+    const stratName = log.strategyName || (log.strategy === 'dupes' ? 'Dupes' : (STRATEGIES.find(s=>s.id===log.strategy)||{}).name || log.strategy);
+    const customDesc = log.customInstructions ? ' — ' + log.customInstructions.substring(0,40) + (log.customInstructions.length>40?'…':'') : '';
+    return `<div class="log-item"><div style="width:32px;height:32px;background:var(--accent-lt);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px">${stratIcon}</div><div class="log-body"><div class="log-title">${esc(stratName)}${esc(customDesc)}</div><div class="log-meta">${ds} · ${log.filesSuccess||0} files → ${fc} folders · ${esc((log.rootFolder||'').split(/[\\/]/).pop())}${log.deepScan?' · DEEP':''}</div></div><div class="log-actions"><button class="view-btn" onclick="logAction('view',${idx})" title="View"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="undo-btn" onclick="logAction('undo',${idx})" title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button><button class="del-btn" onclick="logAction('del',${idx})" title="Delete"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div></div>`;
+  }).join('');
+}
+
+async function logAction(action, idx) {
+  const entry = (state._logCache || [])[idx];
+  if (!entry) { toast('Log not found', 'error'); return; }
+  const fn = entry.filename;
+  if (action === 'view') return viewLog(fn);
+  if (action === 'undo') return undoLog(fn);
+  if (action === 'del') return deleteLog(fn);
+}
+async function viewLog(fn) {
+  const log = await api.loadSweepLog({filename:fn});
+  if (!log) { toast('Could not load log','error'); return; }
+  state.currentLogDetail = {...log, filename:fn};
+  document.getElementById('log-detail-title').textContent = (log.filesSuccess||0)+' files '+(log.deletedFromSource?'moved':'copied');
+  const d = new Date(log.timestamp);
+  const stratName = log.strategy === 'dupes' ? 'Clear Duplicates' : (log.strategyName || (STRATEGIES.find(s=>s.id===log.strategy)||{}).name || 'Unknown');
+  const customNote = log.customInstructions ? '<div><strong>Custom:</strong> ' + esc(log.customInstructions) + '</div>' : '';
+  let h = `<div style="padding:9px;background:var(--bg2);border-radius:var(--rs);margin-bottom:8px;font-size:11.5px"><div><strong>Date:</strong> ${d.toLocaleDateString()} ${d.toLocaleTimeString()}</div><div><strong>Source:</strong> ${esc(log.rootFolder||'?')}</div>${log.destPath?'<div><strong>Dest:</strong> '+esc(log.destPath)+'</div>':''}<div><strong>Strategy:</strong> ${esc(stratName)}${log.deepScan?' · Deep Scan':''}${log.deletedFromSource?' · <span style="color:var(--red)">Source deleted</span>':''}</div>${customNote}<div><strong>Provider:</strong> ${esc(log.provider||'?')} · ${esc(log.model||'')}</div><div><strong>Summary:</strong> ${esc(log.summary||'')}</div><div><strong>Files:</strong> ${log.filesSuccess||0} organized, ${log.filesError||0} errors</div></div>`;
+  h += (log.moves||[]).map(m=>`<div class="log-move-item"><div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${esc(m.name)}</div><div class="arrow">→</div><div style="font-size:10.5px;color:var(--accent);font-weight:600">${esc(m.folder)}</div></div>`).join('');
+  document.getElementById('log-detail-body').innerHTML = h;
+  document.getElementById('log-detail').classList.add('active');
+}
+function closeLogDetail() { document.getElementById('log-detail').classList.remove('active'); state.currentLogDetail=null; }
+async function undoFromDetail() {
+  if (!state.currentLogDetail) return;
+  const log = state.currentLogDetail;
+  const undoLabel = log.deletedFromSource ? 'Copy back to source & remove from dest' : 'Remove copies from dest';
+  showModal('Undo Sweep?', undoLabel + ' (' + log.moves.length + ' files)?',[
+    {label:'Cancel',cls:'btn-secondary',action:closeModal},
+    {label:'Undo',cls:'btn-danger',action:async()=>{ closeModal(); const r=await api.undoSweep({moves:log.moves,rootFolder:log.rootFolder}); const s=r.results.filter(x=>x.success).length; toast('Undo: '+s+'/'+r.results.length+' restored',s>0?'success':'error'); closeLogDetail(); loadLogs(); }}
+  ]);
+}
+async function undoLog(fn) {
+  const log = await api.loadSweepLog({filename:fn});
+  if (!log) { toast('Could not load log','error'); return; }
+  const undoLabel = log.deletedFromSource ? 'Copy back to source & remove from dest' : 'Remove copies from dest';
+  showModal('Undo Sweep?', undoLabel + ' (' + log.moves.length + ' files)?',[
+    {label:'Cancel',cls:'btn-secondary',action:closeModal},
+    {label:'Undo',cls:'btn-danger',action:async()=>{ closeModal(); const r=await api.undoSweep({moves:log.moves,rootFolder:log.rootFolder}); const s=r.results.filter(x=>x.success).length; toast('Undo: '+s+'/'+r.results.length+' restored',s>0?'success':'error'); loadLogs(); }}
+  ]);
+}
+async function deleteLog(fn) {
+  showModal('Delete Log?','Permanently delete this log?',[
+    {label:'Cancel',cls:'btn-secondary',action:closeModal},
+    {label:'Delete',cls:'btn-danger',action:async()=>{ closeModal(); await api.deleteSweepLog({filename:fn}); toast('Deleted','info'); loadLogs(); }}
+  ]);
+}
+
+// ═══ SETTINGS ═══
+function renderProviderCards() {
+  document.getElementById('provider-cards').innerHTML = PROVIDERS.map(p => `
+    <div class="provider-card ${state.settings.provider===p.id?'selected':''}" onclick="selectProvider('${p.id}')">
+      <div class="pc-head"><div class="pc-dot"></div><span class="pc-name">${p.name}</span></div>
+      <div class="pc-desc">${p.desc}</div>
+      <div class="key-input sg" style="margin-top:4px"><label>API Key</label>
+        <input type="password" id="key-${p.id}" value="${state.settings.apiKeys[p.id]||''}" placeholder="Enter your ${p.name} API key" oninput="state.settings.apiKeys['${p.id}']=this.value">
+      </div>
+    </div>`).join('');
+}
+function selectProvider(id) { state.settings.provider=id; renderProviderCards(); updateModelSelect(); }
+function updateModelSelect() {
+  const sel = document.getElementById('model-select');
+  const prov = PROVIDERS.find(p=>p.id===state.settings.provider);
+  sel.innerHTML = prov.models.map(m=>`<option value="${m}" ${state.settings.model===m?'selected':''}>${m}</option>`).join('');
+  if (!state.settings.model || !prov.models.includes(state.settings.model)) state.settings.model = prov.models[0];
+  sel.onchange = () => { state.settings.model = sel.value; };
+}
+function renderDeepScanTypes() {
+  const container = document.getElementById('deep-scan-types');
+  container.innerHTML = DEEP_SCAN_TYPES.map(t => {
+    const checked = state.settings.deepScanTypes.includes(t.id);
+    return `<label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1.5px solid ${checked?'var(--accent)':'var(--border)'};border-radius:var(--rx);font-size:11px;font-weight:500;cursor:pointer;background:${checked?'var(--accent-lt)':'var(--bg)'};transition:all var(--t);min-width:fit-content"><input type="checkbox" ${checked?'checked':''} onchange="toggleDeepScanType('${t.id}',this.checked)" style="accent-color:var(--accent);margin:0">${t.name}<span style="font-size:9px;color:var(--text3)">${t.exts.slice(0,3).join(' ')}</span></label>`;
+  }).join('');
+}
+function toggleDeepScanType(id, on) {
+  if (on && !state.settings.deepScanTypes.includes(id)) state.settings.deepScanTypes.push(id);
+  else if (!on) state.settings.deepScanTypes = state.settings.deepScanTypes.filter(t=>t!==id);
+  renderDeepScanTypes();
+}
+async function saveSettings() {
+  const inlineEl = document.getElementById('inline-custom');
+  if (inlineEl) state.settings.customInstructions = inlineEl.value;
+  else state.settings.customInstructions = document.getElementById('custom-instructions').value;
+  state.settings.ignoreExts = document.getElementById('ignore-exts').value;
+  state.settings.model = document.getElementById('model-select').value;
+  state.settings.tokenBudget = parseInt(document.getElementById('token-budget').value) || TOKEN_BUDGET;
+  const ok = await api.saveSettings(state.settings);
+  const st = document.getElementById('save-status');
+  st.textContent = ok ? '✓ Saved' : '✗ Error';
+  st.classList.add('vis'); setTimeout(()=>st.classList.remove('vis'), 2000);
+}
+
+// ═══ UTILS ═══
+function humanSz(b){if(!b)return '0 B';const k=1024,s=['B','KB','MB','GB','TB'],i=Math.floor(Math.log(b)/Math.log(k));return parseFloat((b/Math.pow(k,i)).toFixed(1))+' '+s[i];}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast '+type+' show';clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}
+function showModal(title,body,actions){const m=document.getElementById('modal');m.innerHTML='<h3>'+title+'</h3><p>'+body+'</p><div class="modal-actions">'+actions.map((a,i)=>'<button class="btn '+a.cls+'" id="mb'+i+'">'+a.label+'</button>').join('')+'</div>';actions.forEach((a,i)=>document.getElementById('mb'+i).onclick=a.action);document.getElementById('modal-overlay').classList.add('active');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('active');}
+</script>
+</body></html>

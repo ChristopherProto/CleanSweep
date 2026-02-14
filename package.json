@@ -1,0 +1,33 @@
+{
+  "name": "cleansweep",
+  "version": "1.0.0",
+  "description": "AI-powered folder cleanup — Organize your files intelligently with Gemini, Claude, or GPT",
+  "author": "CleanSweep",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "npx electron .",
+    "build": "npx electron-builder",
+    "build-exe": "npx electron-builder --win portable",
+    "dev": "npx electron . --dev"
+  },
+  "build": {
+    "appId": "com.cleansweep.app",
+    "productName": "CleanSweep",
+    "directories": { "output": "dist" },
+    "win": { "target": ["nsis", "portable"], "icon": "assets/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": { "artifactName": "CleanSweep-Portable.exe" },
+    "files": [ "src/**/*", "assets/**/*" ]
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}
